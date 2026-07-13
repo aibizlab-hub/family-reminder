@@ -2727,13 +2727,21 @@ function init() {
   populateTimeSelects();
   initDarkMode();
   initPTR();
-  // 先用内嵌数据立即渲染（不等网络，离线也能用）
+  // 优先载入本机已保存资料（含用户改过的照顾者/提醒），没有才用内嵌预设
+  // 这一步是修复「改不了照顾者 / 一刷新就还原」的关键：localStorage 必须优先于内嵌数据
+  loadLocal();
   DATA_LOADED = true;
   autoArchiveExpired();
   renderAll();
   updateHistoryBadge();
-  // 再异步尝试从 GitHub 同步（失败也不影响使用）
-  syncFromServer();
+  // 自包含模式：只有设定了 GitHub Token 才做网络同步；否则纯本机，
+  // 绝不向旧仓库发起请求（旧仓库已失效，避免覆盖本地资料）
+  if (getGHToken()) {
+    syncFromServer();
+  } else {
+    var badge = document.getElementById('conn-badge');
+    if (badge) { badge.className = 'conn-status conn-ok'; badge.innerHTML = '🔵 本機模式（資料只存此裝置）'; }
+  }
   checkWAStatus();
 }
 init();
@@ -2817,13 +2825,13 @@ function saveSettings() {
   setTimeout(closeSettingsModal, 800);
 }
 
-// Show token warning on load if missing
+// 本機模式是預期行為，不需警告。保留 Token 設定入口，但不彈錯誤。
 (function() {
   var t = localStorage.getItem('gh_token');
   if (!t || t.length < 10) {
     setTimeout(function() {
       var status = document.getElementById('conn-badge');
-      if (status) { status.className='conn-status conn-err';status.innerHTML='&#9888; 未設定 Token — 請按右上角 &#9881; 設定'; }
+      if (status) { status.className='conn-status conn-ok';status.innerHTML='🔵 本機模式（資料只存此裝置）'; }
     }, 1500);
   }
 })();
