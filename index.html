@@ -481,8 +481,8 @@ body::before { content:''; position:fixed; top:0; left:0; right:0; bottom:0; bac
       <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">&#128279; 永久網址</h3>
       <p style="font-size:12px;color:#666;margin-bottom:6px;">Bookmark 呢個 link，永遠唔會變：</p>
       <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <code style="flex:1;min-width:0;word-break:break-all;font-size:12px;color:#166534;">https://ken851004-afk.github.io/family-reminder-cloud/</code>
-        <button class="btn btn-outline" style="width:auto;margin-top:0;padding:6px 12px;font-size:11px;" onclick="copyToClipboard('https://ken851004-afk.github.io/family-reminder-cloud/')">&#128203; 複製</button>
+        <code style="flex:1;min-width:0;word-break:break-all;font-size:12px;color:#166534;">https://aibizlab-hub.github.io/family-reminder-cloud/</code>
+        <button class="btn btn-outline" style="width:auto;margin-top:0;padding:6px 12px;font-size:11px;" onclick="copyToClipboard('https://aibizlab-hub.github.io/family-reminder-cloud/')">&#128203; 複製</button>
       </div>
     </div>
   </div>
@@ -1653,6 +1653,15 @@ function syncFromAPI() {
     syncFromGitHub();
   });
 }
+// 防止同步 fetch 卡死：超時就 reject，UI 唔會永遠「重整中」
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error('sync timeout ' + ms + 'ms')); }, ms);
+    })
+  ]);
+}
 function syncFromGitHub() {
   var localData = localStorage.getItem(LS_KEY);
   var localParsed = null;
@@ -1660,7 +1669,7 @@ function syncFromGitHub() {
   var localTime = (localParsed && localParsed._localUpdated) || 0;
 
   // Try API first (gets SHA for push), fallback to raw URL (no token needed)
-  var ghFetch = fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+  var ghFetch = fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/contents/data.json', {
     headers: { 'Authorization': 'Bearer ' + getGHToken(), 'Accept': 'application/vnd.github.v3+json' }
   }).then(function(r){ return r.json(); })
   .then(function(j){
@@ -1671,12 +1680,14 @@ function syncFromGitHub() {
     return { data: ghData, sha: j.sha, hasToken: true };
   });
 
-  var rawFallback = fetch('https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/data.json?' + Date.now())
+  var rawFallback = fetch('https://raw.githubusercontent.com/aibizlab-hub/family-reminder-cloud/master/data.json?' + Date.now())
     .then(function(r){ if (!r.ok) throw new Error('raw ' + r.status); return r.json(); })
     .then(function(d){ return { data: d, sha: '', hasToken: false }; });
 
   // Race: prefer API if token exists, else use raw
   var fetchPromise = getGHToken() ? ghFetch.catch(function(){ return rawFallback; }) : rawFallback;
+  // 10s 安全網：網絡卡住會 reject -> 觸發 .catch 重置按鈕，唔會永遠「重整中」
+  fetchPromise = withTimeout(fetchPromise, 10000);
 
   fetchPromise.then(function(result){
     var ghData = result.data;
@@ -1755,7 +1766,7 @@ function pushToGitHub() {
   var binary = '';
   bytes.forEach(function(b) { binary += String.fromCharCode(b); });
   var b64 = btoa(binary);
-  fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+  fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/contents/data.json', {
     method: 'PUT',
     headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: 'Update data.json via web UI', content: b64, sha: DATA_SHA, branch: 'master' })
@@ -2575,7 +2586,7 @@ async function sendWhatsApp() {
 
   try {
     var token = getGHToken();
-    var getResp = await fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+    var getResp = await fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/contents/data.json', {
       headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
     });
     if (!getResp.ok) throw new Error('GitHub GET ' + getResp.status);
@@ -2588,14 +2599,14 @@ async function sendWhatsApp() {
     var serverData = JSON.parse(new TextDecoder('utf-8').decode(bytes));
     serverData.pendingMessages = DATA.pendingMessages;
 
-    var putResp = await fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/contents/data.json', {
+    var putResp = await fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/contents/data.json', {
       method: 'PUT',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
       body: JSON.stringify({ message: 'WhatsApp: ' + text.substring(0, 50), content: utf8ToBase64(JSON.stringify(serverData, null, 2)), sha: sha })
     });
     if (!putResp.ok) throw new Error('GitHub PUT ' + putResp.status);
 
-    await fetch('https://api.github.com/repos/ken851004-afk/family-reminder-cloud/actions/workflows/caregiver-remind.yml/dispatches', {
+    await fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/actions/workflows/caregiver-remind.yml/dispatches', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ ref: 'master' })
@@ -2843,8 +2854,8 @@ function copyInstallCmd(os) {
   var box = document.getElementById('install-cmd-box');
   var text = document.getElementById('install-cmd-text');
   var cmds = {
-    mac: 'bash -c "$(curl -fsSL https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/install.sh)"',
-    win: 'powershell -c "irm https://raw.githubusercontent.com/ken851004-afk/family-reminder-cloud/master/install.bat | iex"'
+    mac: 'bash -c "$(curl -fsSL https://raw.githubusercontent.com/aibizlab-hub/family-reminder-cloud/master/install.sh)"',
+    win: 'powershell -c "irm https://raw.githubusercontent.com/aibizlab-hub/family-reminder-cloud/master/install.bat | iex"'
   };
   text.textContent = cmds[os];
   box.style.display = 'block';
