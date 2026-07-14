@@ -989,7 +989,21 @@ function pushToGitHub(retryCount) {
   retryCount = retryCount || 0;
   var token = getGHToken();
   if (!DATA_LOADED) { console.log('Data not loaded yet, skip push'); return Promise.resolve(false); }
-  if (!token || !DATA_SHA) { console.log('No token or SHA, skip push'); return Promise.resolve(false); }
+  if (!token) { toast('⚠️ 未設定 GitHub Token，無法同步'); return Promise.resolve(false); }
+  // SHA is empty when data was loaded via same-origin read (no SHA available).
+  // Lazy-fetch the current SHA from the API so cross-repo writes still work.
+  if (!DATA_SHA) {
+    return fetch('https://api.github.com/repos/aibizlab-hub/family-reminder-cloud/contents/data.json', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' }
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if (j && j.sha) { DATA_SHA = j.sha; console.log('[GH] Fetched missing SHA:', DATA_SHA); return pushToGitHub(retryCount); }
+      throw new Error('No SHA in response');
+    }).catch(function(e){
+      console.log('[GH] Failed to fetch SHA:', e);
+      toast('⚠️ 無法取得雲端版本，同步失敗');
+      return false;
+    });
+  }
   var jsonStr = JSON.stringify(DATA, null, 2);
   var bytes = new TextEncoder().encode(jsonStr);
   var binary = '';
