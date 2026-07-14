@@ -930,7 +930,10 @@ function syncFromGitHub() {
       DATA_LOADED = true;
       API_ONLINE = true; saveLocal();
       var _cb = document.getElementById('conn-badge');
-      if (_cb) { _cb.innerHTML = '\u2601\uFE0F 雲端唯讀'; _cb.className = 'conn-status conn-ok'; }
+      if (_cb) {
+        if (getGHToken()) { _cb.innerHTML = '\u2601\uFE0F 雲端已連接'; _cb.className = 'conn-status conn-ok'; }
+        else { _cb.innerHTML = '\u2601\uFE0F 雲端唯讀'; _cb.className = 'conn-status conn-ok'; }
+      }
       autoArchiveExpired();
       renderAll();
       updateHistoryBadge();
