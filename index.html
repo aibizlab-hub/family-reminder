@@ -1313,6 +1313,20 @@ function getOrderIndex(id) {
   var i = o.indexOf(id);
   return i < 0 ? 999999 : i;
 }
+// 排序評分：日數優先（過期放最底），同日再按時間 HH:MM 升序
+function _timeFraction(t) {
+  if (!t || typeof t !== 'string') return 0;
+  var p = t.split(':');
+  var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
+  if (isNaN(h)) h = 0; if (isNaN(m)) m = 0;
+  return (h * 60 + m) / 1440; // 0..1（一日內嘅時間比例）
+}
+function getSortScore(r) {
+  var d = getEffectiveDays(r);
+  var daysPart = (d >= 0) ? d : 99999 + Math.abs(d); // 過期項排最底
+  return daysPart + _timeFraction(r.time); // 同日 → 按時間先後
+}
+function _timeCompare(a, b) { return _timeFraction(a.time) - _timeFraction(b.time); }
 // 統一排序入口：日期 / 分類 / 照顧者 / 手動
 function applySort(arr) {
   if (SORT_MODE === 'manual') {
@@ -1320,7 +1334,7 @@ function applySort(arr) {
     arr.sort(function(a, b) {
       var ia = getOrderIndex(a.id), ib = getOrderIndex(b.id);
       if (ia !== ib) return ia - ib;
-      return getEffectiveDays(a) - getEffectiveDays(b);
+      return getSortScore(a) - getSortScore(b);
     });
     return;
   }
@@ -1329,7 +1343,7 @@ function applySort(arr) {
       var ia = CAT_ORDER.indexOf(a.category), ib = CAT_ORDER.indexOf(b.category);
       if (ia < 0) ia = 999; if (ib < 0) ib = 999;
       if (ia !== ib) return ia - ib;
-      return getEffectiveDays(a) - getEffectiveDays(b);
+      return getSortScore(a) - getSortScore(b);
     });
     return;
   }
@@ -1337,16 +1351,13 @@ function applySort(arr) {
     arr.sort(function(a, b) {
       var ca = a.caregiver || 'zzz', cb = b.caregiver || 'zzz';
       if (ca !== cb) return ca.localeCompare(cb);
-      return getEffectiveDays(a) - getEffectiveDays(b);
+      return getSortScore(a) - getSortScore(b);
     });
     return;
   }
-  // date（預設）
+  // date（預設）：先跟日期，同日再跟時間
   arr.sort(function(a, b) {
-    var da = getEffectiveDays(a), db = getEffectiveDays(b);
-    var pa = (da >= 0) ? da : 99999 + Math.abs(da);
-    var pb = (db >= 0) ? db : 99999 + Math.abs(db);
-    return pa - pb;
+    return getSortScore(a) - getSortScore(b);
   });
 }
 function setSortMode(m) {
@@ -1424,7 +1435,7 @@ function renderReminders() {
           else break;
         }
         if (siblings.length >= 2) {
-          siblings.sort(function(a,b){ return a.date.localeCompare(b.date); });
+          siblings.sort(function(a,b){ return a.date.localeCompare(b.date) || _timeCompare(a,b); });
           var sDate = siblings[0].date;
           var eDate = siblings[siblings.length - 1].date;
           html += '<div class="section-label">\u{1F4C5} ' + esc(baseName) + '（' + sDate + ' 至 ' + eDate + '，共 ' + siblings.length + ' 日）</div>';
