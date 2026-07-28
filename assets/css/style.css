@@ -486,31 +486,134 @@ body.download.dark-mode .btn-secondary{ background:#fbf8f4; color:#a9762e; borde
 body.download.dark-mode .dl-foot{ color:#9a9189; }
 
 /* ============================================================
-   RESPONSIVE  — phone (default) / iPad / desktop
+   RESPONSIVE  — 3 distinct layouts: PHONE / TABLET / DESKTOP
+   Phone = default (≤560px)  |  Tablet = 561–960px  |  Desktop ≥961px
    ============================================================ */
-@media screen and (max-width:600px){
-  .header{ padding:44px 16px 54px; }
-  .card-date{ flex-direction:row; align-items:center; }
-  .card-date-text{ flex:1; }
-  .form-row{ gap:6px; }
-  .time-sel{ font-size:14px; padding:10px 4px; }
-  .bday-grid{ grid-template-columns:1fr; }
-  .calendar-panel{ padding:11px; }
-  .cal-day{ font-size:11px; min-height:42px; }
+
+/* ---- PHONE (default, ≤560px) ---- */
+.header{
+  padding:36px 15px 44px;
 }
-@media screen and (min-width:600px){
-  .container{ max-width:680px; }
+.header h1{
+  font-size:clamp(32px,11vw,48px);
 }
-@media screen and (min-width:768px){
-  body{ font-size:14.5px; }
-  .container{ max-width:760px; }
-  .reminders-layout{ gap:16px; }
-  .calendar-panel{ width:300px; }
-  .bday-grid{ grid-template-columns:1fr 1fr 1fr; }
+.header p{
+  font-size:12.5px; margin-top:8px; max-width:28ch;
 }
-@media screen and (min-width:1024px){
-  .container{ max-width:1000px; }
-  .reminders-layout{ display:flex; }
-  .calendar-panel{ width:320px; position:sticky; top:62px; }
+.header .hero-actions{
+  gap:6px; margin-top:14px;
+}
+.conn-status,.wa-status{
+  font-size:10px; padding:4px 9px;
+}
+
+/* toolbar: wrap, compact */
+.toolbar{ gap:5px; margin-bottom:9px; }
+.toolbar button{
+  padding:7px 8px; font-size:10.5px; min-height:32px; border-radius:9px;
+  flex:1 1 0%; max-width:calc(33.333% - 4px);
+}
+
+/* stack calendar BELOW reminders on phone */
+.reminders-layout{ flex-direction:column; }
+.calendar-panel{
+  width:100%!important; position:relative!important; top:auto!important;
+  order:2; /* show after reminder cards */
+  margin-top:12px;
+}
+.reminders-list-wrap{ order:1; width:100%; }
+
+/* tab bar: slightly tighter */
+.tab-btn{ padding:10px 11px; font-size:11.5px; min-width:42px; min-height:38px; margin:6px 2px 6px; }
+
+/* cards: slightly tighter */
+.card{ padding:13px 14px 13px 15px; margin-bottom:10px; border-radius:var(--radius-sm); }
+.card-name{ font-size:14.5px; }
+.card-icon{ font-size:20px; }
+
+/* bday: single column */
+.bday-grid{ grid-template-columns:1fr; }
+
+/* modal: full width bottom sheet */
+.modal-sheet{ border-radius:20px 20px 0 0; padding:16px 16px 30px; }
+.modal-title{ font-size:19px; }
+
+/* calendar compact */
+.calendar-panel{ padding:12px; }
+.cal-day{ font-size:11.5px; min-height:40px; padding:1px 0; }
+.cal-title{ font-size:15px; }
+
+/* FAB: slightly smaller on phone */
+.fab{ width:54px; height:54px; bottom:18px; right:14px; font-size:26px; }
+
+/* sort select: full width on phone */
+.sort-select{ max-width:100%; margin-left:0; margin-top:6px; width:100%; }
+
+/* form inputs: comfortable tap targets */
+.form-input,.form-select,.form-textarea{ padding:11px 13px; font-size:14px; border-radius:var(--radius-sm); }
+.time-sel{ min-height:42px; font-size:14px; }
+
+/* container: narrow */
+.container{ max-width:100%; padding:12px 12px 0; }
+
+/* ---- TABLET (561px – 960px) ---- */
+@media screen and (min-width:561px){
+  .header{ padding:46px 22px 58px; }
+  .header h1{ font-size:clamp(38px,7vw,58px); }
+  .header p{ font-size:13.5px; margin-top:10px; }
+  .conn-status,.wa-status{ font-size:11px; padding:5px 11px; }
+  .header .hero-actions{ gap:8px; margin-top:18px; }
+
+  /* toolbar: 2-row friendly */
+  .toolbar button{
+    padding:8px 10px; font-size:11.5px; min-height:34px;
+    flex:1 1 0%; max-width:calc(25% - 5px);
+  }
+
+  /* side-by-side layout returns */
+  .reminders-layout{ flex-direction:row; }
+  .calendar-panel{
+    width:280px; position:sticky; top:58px;
+    order:unset;
+  }
+  .reminders-list-wrap{ flex:1; min-width:0; }
+
+  .container{ max-width:720px; padding:14px 16px 0; }
+  .tab-btn{ padding:11px 13px; font-size:12px; }
+
+  .card{ padding:14px 15px 14px 16px; }
+  .bday-grid{ grid-template-columns:1fr 1fr; }
+  .calendar-panel{ padding:13px; }
+  .cal-day{ font-size:12px; min-height:44px; }
+
+  .fab{ width:56px; height:56px; bottom:20px; right:16px; }
+  .sort-select{ max-width:48%; margin-left:auto; margin-top:0; }
+}
+
+/* ---- DESKTOP (≥961px) ---- */
+@media screen and (min-width:961px){
+  .header{ padding:54px 28px 68px; }
+  .header h1{ font-size:clamp(44px,5vw,68px); }
+  .header p{ font-size:14.5px; margin-top:14px; max-width:34ch; }
+  .header .hero-actions{ gap:10px; margin-top:24px; }
+
+  /* toolbar: single row, spacious */
+  .toolbar button{
+    padding:9px 12px; font-size:12px; min-height:36px;
+    flex:0 1 auto; max-width:none;
+  }
+
+  .container{ max-width:1080px; padding:18px 20px 0; }
+  .reminders-layout{ gap:18px; }
+  .calendar-panel{ width:320px; padding:16px; position:sticky; top:64px; }
+  .cal-day{ font-size:13px; min-height:48px; }
+
+  .card{ padding:16px 18px 16px 19px; margin-bottom:13px; border-radius:var(--radius); }
   .card-name{ font-size:16px; }
+  .bday-grid{ grid-template-columns:1fr 1fr 1fr; }
+
+  .tab-btn{ padding:12px 15px; font-size:13px; min-width:50px; min-height:44px; margin:8px 3px 8px; }
+
+  .modal-sheet{ max-width:560px; }
+  .fab{ width:60px; height:60px; bottom:26px; right:22px; font-size:28px; }
 }
