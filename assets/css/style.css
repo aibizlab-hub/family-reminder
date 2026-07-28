@@ -73,8 +73,8 @@ body > * { position:relative; z-index:1; }
   padding:54px 20px 64px;
   color:var(--text);
   background:
-    linear-gradient(180deg, rgba(14,14,14,.42) 0%, rgba(14,14,14,.78) 62%, rgba(14,14,14,.96) 100%),
-    url("../img/hero.jpg") center 30% / cover no-repeat,
+    linear-gradient(180deg, rgba(12,10,8,.66) 0%, rgba(12,10,8,.34) 30%, rgba(12,10,8,.14) 56%, rgba(14,14,14,.9) 100%),
+    url("../img/hero.jpg") center 32% / cover no-repeat,
     var(--bg);
   border-bottom:1px solid var(--line);
 }
