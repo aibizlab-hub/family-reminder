@@ -816,8 +816,29 @@ function loadLocal() {
   try { var raw=localStorage.getItem(LS_KEY); if(raw){DATA=JSON.parse(raw);return true;} } catch(e){}
   return false;
 }
+// ===== Cloud sync → jsonblob (single source of truth for WhatsApp notifier) =====
+// 資料橋：每次 save 都會把 DATA 推去雲端 jsonblob，令 CallMeBot / wacli notifier
+// 讀得到，長輩唔開 app 都收到 WhatsApp。debounce 1.5s 避免連續 edit 狂推。
+var JSONBLOB_ID = '019fbcb0-45fe-7396-8713-75286c4be862';
+var _syncTimer = null;
+function syncToJsonblob() {
+  if (!JSONBLOB_ID) return;
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function() {
+    try {
+      fetch('https://jsonblob.com/api/jsonBlob/' + JSONBLOB_ID, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(DATA)
+      }).then(function(r){ if(!r.ok) console.warn('[sync] jsonblob PUT failed', r.status); })
+        .catch(function(e){ console.warn('[sync] jsonblob error', e); });
+    } catch(e) { console.warn('[sync] jsonblob error', e); }
+  }, 1500);
+}
+
 function saveLocal() {
   localStorage.setItem(LS_KEY, JSON.stringify(DATA));
+  syncToJsonblob();
 }
 
 // ===== Sync =====
